@@ -25,9 +25,9 @@ export const getTasksById = async(req: Request, res:Response) =>{
 
     const id = validateParams.data.id;
     const result = await getTaskByIdModel(id);
-    if(result == 0){
+    if(result === null){
         console.error({error: "el id proporcionado no existe en la base de datos"})
-        res.status(400).json({error: "el id proporcionado no existe en la base de datos"});
+        res.status(404).json({error: "el id proporcionado no existe en la base de datos"});
         return;
     }
     res.status(200).json({task: result})
@@ -39,12 +39,13 @@ export const createTask = async(req: Request, res:Response) =>{
 
     const resultTitle = taskSchema.safeParse(req.body);
     if(!resultTitle.success){
-        res.status(400).json(resultTitle.error.format());
+        res.status(400).json({error:"tipo de dato incorrecto, solo se acepta 'string'"});
         return;
     }
     const title = resultTitle.data?.title;
-    await createTaskModel(title);
-    res.status(201).json({mensaje: "¡tarea creada exitosamente!"})
+    const response = await createTaskModel(title);
+    res.status(201).json({mensaje: "¡tarea creada exitosamente!", task: response });
+    console.log({mensaje: "¡tarea creada exitosamente!", task: response });
     
 };
 
@@ -62,17 +63,23 @@ export const updateTask = async(req: Request, res:Response) =>{
         console.error({error: "hay un tipo de dato incorrecto"})
         return;
     }
+    const dataBody = validateBody.data
+    if(Object.keys(dataBody).length == 0){
+        res.status(400).json({error: "no ingreso los campos"});
+        console.error({error: "campos vacios"});
+        return;
+    }
 
     const id = validateParams.data.id;
     const title = validateBody.data.title;
     const completed = validateBody.data.completed;
 
     const result = await updateTaskModel(id, title, completed);
-    if(result == 0){
-        res.status(400).json({error: "tarea con id ingresado no existe"});
+    if(result === null){
+        res.status(404).json({error: "tarea con id ingresado no existe"});
         return;
     }
-    res.status(201).json({mensaje: "¡tarea actualizada exitosamente!"})
+    res.status(200).json({mensaje: "¡tarea actualizada exitosamente!", task: result })
 }
     
 
@@ -87,11 +94,11 @@ export const deleteTask = async(req: Request, res:Response) =>{
 
     const id = validateParams.data.id;
     const result = await deleteTaskModel(id);
-    if(result == 0){
-        res.status(400).json({error: "tarea con id ingresado no existe"});
+    if(result === null){
+        res.status(404).json({error: "tarea con id ingresado no existe"});
         console.error({error: 'tarea a eliminar no existe'})
         return;
     }
-    res.status(204).json({mensaje: "¡tarea elimanda exitosamente!", deletedTask: result})
+    res.status(200).json({mensaje: "¡tarea elimanda exitosamente!", deletedTask: result})
     
 };

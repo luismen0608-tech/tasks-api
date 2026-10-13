@@ -13,46 +13,41 @@ export const getTaskByIdModel = async(id: number)=>{
     const result = await pool.query('SELECT * FROM tasks WHERE id = $1', [id]);
 
     if(result.rowCount == 0){
-      return 0
+      return null
     }
     
-    return result.rows;
+    return result.rows[0];
 }
 
 export const createTaskModel = async(title: string) =>{
-    await pool.query('INSERT INTO tasks (title) VALUES ($1)', [title]);
+    const response = await pool.query('INSERT INTO tasks (title) VALUES ($1) RETURNING *', [title]);
+    return response.rows[0];
 }
 
 export const updateTaskModel = async(id: number, title?:string, completed?:boolean) =>{
   
   let result;
 
-  const idExist = pool.query('SELECT * from tasks WHERE id = $1', [id])
-
-  if(!idExist){
-
-    result = 0;
-    return result;
-
-  }
-  
   if(title == undefined && completed != undefined){
     result = await pool.query('UPDATE tasks SET completed=$1 WHERE id=$2 RETURNING *', [completed, id]);
-    return result.rows;
+    
   }else if(title != undefined && completed != undefined){
     result = await pool.query('UPDATE tasks SET completed=$1, title=$2 WHERE id=$3 RETURNING *', [completed, title, id]);
-    return result.rows;
+    
+  }else{
+    result = await pool.query('UPDATE tasks SET title=$1  WHERE id=$2 RETURNING *', [title, id]);
   }
 
-    result = await pool.query('UPDATE tasks SET title=$1  WHERE id=$2 RETURNING *', [title, id]);
-    
-   return result.rows
+  if(result.rowCount == 0){
+    return null;
+  }
+   return result.rows[0];
 }
 
 export const deleteTaskModel = async(id:number)=>{
    const result = await pool.query('DELETE FROM tasks WHERE id=$1 RETURNING *', [id]);
    if(result.rowCount == 0){
-       return result.rowCount;
+       return null;
    }
-   return result.rows;
+   return result.rows[0];
 }
